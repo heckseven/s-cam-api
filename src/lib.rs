@@ -43,9 +43,23 @@ pub enum LedManagerOp {
     JackEyes,
     Invalid,
     SetTestRate,
+    /// Select a standalone ring pattern by index; 0 restores gene expression.
+    /// Appended after SetTestRate and before the explicitly-numbered Pause so that
+    /// nothing already on the wire is renumbered.
+    SetPattern,
     // this is a hard-coded inside the bio-service to avoid leaking project to public repos
     Pause = 128,
 }
+
+// LedManagerOp crosses the process boundary between dc34-vault and dc34-console, and
+// Pause's value is described above as hard-coded elsewhere. Pin the numbering so an
+// inserted variant is a build failure rather than a silent misdispatch.
+const _: () = assert!(LedManagerOp::Autogamy as isize == 0);
+const _: () = assert!(LedManagerOp::SetGene as isize == 3);
+const _: () = assert!(LedManagerOp::Invalid as isize == 6);
+const _: () = assert!(LedManagerOp::SetTestRate as isize == 7);
+const _: () = assert!(LedManagerOp::SetPattern as isize == 8);
+const _: () = assert!(LedManagerOp::Pause as isize == 128);
 
 pub const POWER_MANAGER_SERVER: &'static str = "_dc34_pwr_mgr_";
 #[derive(Debug, Copy, Clone, num_derive::FromPrimitive, num_derive::ToPrimitive)]
