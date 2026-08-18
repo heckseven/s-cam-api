@@ -596,3 +596,30 @@ fn gray_decode(mut n: u8) -> u8 {
     }
     p
 }
+
+// ---- Photo storage, shared by the badge and the console ----
+//
+// These lived twice: once in dc34-vault/src/storage.rs and once in
+// dc34-console/src/cmds/photo.rs, because both write the photo dictionary directly - a photo
+// is 2KB and does not fit in a scalar message, and the PDDB is shared anyway. The two copies
+// of the cap had already drifted to 27 and 32, so uploading over the REPL could push past the
+// limit the badge itself enforced, and the badge would then refuse to store a picture you had
+// just taken. One definition, so they cannot disagree again.
+
+/// The dictionary the badge keeps camera photos in.
+pub const VAULT_PHOTOS_DICT: &str = "vault.photos";
+
+/// A photo is the 128x128 thresholded framebuffer, bit-identical to a compiled-in bitmap.
+pub const PHOTO_BYTES: usize = 2048;
+
+/// How many photos may be stored.
+///
+/// Bounded by how tedious the 2x2 grid is to walk, not by space: the PDDB's VPAGE_SIZE is
+/// 4064 bytes, so a 2048-byte photo cannot share a page with another and each one costs ~4KiB
+/// of the 4MiB store. 64 photos is ~256KiB, about 6%, which leaves the FIDO credentials and
+/// saved QR codes plenty of room. Raising it much further wants paging in the grid first -
+/// stepping one photo at a time through a hundred of them is the part that actually hurts.
+///
+/// There is no free-space query in the PDDB client, so this cap is the only thing stopping
+/// photos from crowding out everything else. Treat it as a safety limit, not a preference.
+pub const PHOTO_CAP: usize = 64;
